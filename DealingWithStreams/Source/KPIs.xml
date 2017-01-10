@@ -1,0 +1,300 @@
+﻿<vz:view vz:name="KPIs"    >
+
+  <vz:grid id="kpigrid" vz:dataSourceType="VizFx.Data.Kusto"   style="width:800px;maxheight:400px;" >
+    <vz:dataSource>
+      <![CDATA[
+         let apps = ApplicationNameMappings |  project ApplicationName ,  ServiceType , sla, GroupName;
+let wcfapps = apps | where  ServiceType == "WCF" | project ApplicationName ,  sla, GroupName;
+let nonwcfapps = apps | where  ServiceType != "WCF"| project ApplicationName ,  sla , GroupName;
+let events = event  | where timestamp >= todatetime("@dateFrom") and timestamp <= todatetime("@dateTo") ;
+let requestEvents = events | where telemetryType == @'request'  and event_Name !has "/Content/" and event_Name !has ".js" and event_Name !has "swagger" and event_Name !has "function()" and event_ResponseCodeOrResultCode matches regex "[[:digit:]]";
+let availabilityResult = events |where telemetryType == @'availabilityResult' ;
+let metrics = wcfapps | join ( metric | where telemetryType == @'metric' and timestamp >= todatetime("@dateFrom") and timestamp <=  todatetime("@dateTo") and metric_Name startswith "[WCF Service]" 
+                    | project operation_Id, ApplicationName = app_Name) on ApplicationName ;
+apps  | join kind=leftouter ( availabilityResult |extend ApplicationName =app_Name ,event_Success = toint(event_Success)
+|union kind = inner
+                (
+                event  | where timestamp >= todatetime("@dateFrom") and timestamp <= todatetime("@dateTo") and event_Name == "OutsideIndata"
+                                | extend event_Success = toint(iff(customDimensions["Result"] == "True", 1, 0)) , ApplicationName =app_Name) ) on  ApplicationName 
+                 |summarize  Availability =(sum(toint(event_Success) ) * 100.0)/ count() by GroupName 
+                                      | join kind=leftouter (
+nonwcfapps  | join kind=inner (requestEvents | where event_ResponseCodeOrResultCode !in ("400", "401", "402", "403", "404", "409", "412")   | where operation_SyntheticSource != "Application Insights Availability Monitoring"
+                | extend Success = iff(event_Success == @'True', 1, 0) ,  ApplicationName = app_Name ) on ApplicationName 
+                       | union (
+wcfapps | join kind=inner (metrics
+|join kind=inner ( requestEvents | where  event_ResponseCodeOrResultCode !in ("400", "401", "402", "403", "404", "409", "412")  | where operation_SyntheticSource != "Application Insights Availability Monitoring"
+| project ApplicationName=app_Name, event_Success, operation_Id  ) on operation_Id
+                | extend Success = iff(event_Success == @'True', 1, 0)) on ApplicationName)
+                | summarize Reliability = todouble(sum(Success) * 100)/count()   by  GroupName
+)on GroupName
+                | join kind=leftouter (
+nonwcfapps | join kind=inner (
+          requestEvents | where  event_Success == @'True'
+ | project ApplicationName=app_Name, event_Duration )  on ApplicationName  
+| extend Success = iff(toint(event_Duration) < sla, 1, 0)
+        | union (
+wcfapps| join kind=inner (  metrics 
+        |join kind=inner (         requestEvents |where event_Success == @'True' 
+| project ApplicationName=app_Name, event_Duration, operation_Id ) on operation_Id
+ )  on ApplicationName
+                | extend Success = iff(toint(event_Duration) < sla, 1, 0))
+                | summarize Performance = todouble(sum(Success) * 100)/count()   by  GroupName
+ )  on GroupName
+         | project GroupName, Availability = floor(Availability * 100, 1)/100, Reliability = floor(Reliability * 100, 1)/100, Performance = floor(Performance * 100, 1)/100
+         | sort by GroupName asc
+
+
+
+              ]]>
+    </vz:dataSource>
+    <vz:properties>
+      <vz:property  vz:name="columns"  vz:value='
+
+[
+  
+{
+  
+"field": "GroupName", 
+  
+"title": "&lt;b&gt;GroupName&lt;/b&gt;", 
+  
+"width": "200px", 
+
+                          
+
+
+ "template": "&lt;div style=\"font-size: 15px;font-weight: bold\"&gt;#=GroupName#&lt;/div&gt;",
+
+"filterable": false
+
+}, 
+  
+{
+  
+"field": "Availability", 
+  
+"title": "&lt;b&gt;Availability(Target: 99.95%)&lt;/b&gt;", 
+  
+"template": "&lt;a href=\"\\#GroupName=#=GroupName#&amp;dateFrom=@dateFrom&amp;dateTo=@dateTo&amp;_tab=1\"&gt;		  
+        
+      &lt;div class=\"tile-pane\" style=\"height:40px;background-color:lightgrey;color:#=getTrendColor(Availability, 99.95, 0.95)#\"&gt;
+
+          &lt;div style=\"display:table-cell;vertical-align:middle;text-align:center;\"&gt;
+
+            &lt;div style=\"margin-left: 50px;margin-top: 9px;display: inline-block;font-size: 20px;font-weight: bold\"&gt;#=Availability#%&lt;/div&gt;
+
+          &lt;/div&gt;
+           &lt;/div&gt;
+        &lt;/a&gt;"
+ 
+}, 
+  
+{
+  
+"field": "Reliability", 
+  
+"title": "&lt;b&gt;Reliability(Target 99.9%)&lt;/b&gt;", 
+  
+"template": "&lt;a href=\"\\#GroupName=#=GroupName#&amp;dateFrom=@dateFrom&amp;dateTo=@dateTo&amp;_tab=1\"&gt;    
+          
+          &lt;div class=\"tile-pane\" style=\"height:40px;background-color:lightgrey;color:#=getTrendColor(Reliability, 99.9, 4.9)#\"&gt;
+
+          &lt;div style=\"display:table-cell;vertical-align:middle;text-align: center;\"&gt;
+
+            &lt;div style=\"margin-left: 50px;margin-top: 9px;display: inline-block;font-size: 20px;font-weight: bold\"&gt;#=Reliability#%&lt;/div&gt;
+
+          &lt;/div&gt;
+           &lt;/div&gt;
+           &lt;/a&gt;"
+ 
+}, 
+  
+{
+  
+"field": "Performance", 
+  
+"title": "&lt;b&gt;Performance(Target 95%)&lt;/b&gt;", 
+  
+
+"template": "&lt;a href=\"\\#GroupName=#=GroupName#&amp;dateFrom=@dateFrom&amp;dateTo=@dateTo&amp;_tab=1\"&gt;
+
+                         &lt;div class=\"tile-pane\" style=\"height:40px;background-color:lightgrey;color:#=getTrendColor(Performance, 95.0, 5.0)#\"&gt;
+
+          &lt;div style=\"display:table-cell;vertical-align:middle;text-align:center;\"&gt;
+
+            &lt;div style=\"margin-left: 50px;margin-top: 9px;display: inline-block;font-size: 20px;font-weight: bold\"&gt;#=Performance#%&lt;/div&gt;
+
+
+          &lt;/div&gt;
+           &lt;/div&gt;
+                          
+                          &lt;/a&gt;"
+  
+}
+ 
+ ]'/>
+    </vz:properties>
+  </vz:grid>
+
+  <div id='AddComment'>
+    Add New Comment
+  </div>
+
+
+  <h4>Comments</h4>  
+  <vz:grid class="vz-anl-pane"  vz:dataSourceType="VizFx.Data.Sql.Text" vz:connection="Data Source=tcp:rn5gpcafps.database.windows.net,1433;initial catalog=SupportPortal;user id=ecngvl;password=ngvl@2016;" >
+
+    <vz:dataSource>
+
+      <![CDATA[
+      SELECT FeatureName as Service,TelemetryTypeName,Comment,Alias,TelemetryCommentid FROM [dbo].[TelemetryComment] tc
+  JOIN TelemetryType tt on tc.TelemetryTypeid=tt.TelemetryTypeid
+  JOIN Feature f ON f.Featureid=tc.featureid
+  WHere (FromDate BETWEEN CONVERT(Datetime,@dateFrom,101) and CONVERT(Datetime,@dateTo,101)) OR (ToDate BETWEEN CONVERT(Datetime,@dateFrom,101) and CONVERT(Datetime,@dateTo,101))
+    
+        ]]>
+
+    </vz:dataSource>
+
+    <vz:properties>
+  <vz:property  vz:name="columns"  vz:value='[  
+                {
+                "field": "Service", 
+                "title": "&lt;b&gt;Group Name&lt;/b&gt;",
+                 "width": "90px"
+                 
+                                 }, 
+                {
+                "field": "TelemetryTypeName",
+                "width": "70px",
+                "title": "&lt;b&gt;KPI Type&lt;/b&gt;"
+                 },
+                 {
+                "field": "Comment",
+                "width": "280px",
+                "title": "&lt;b&gt;Comment&lt;/b&gt;"
+                 },
+                 {
+                "field": "Alias",
+                "width": "70px",
+                "title": "&lt;b&gt;Updated By&lt;/b&gt;"
+                 },
+                  {
+                
+                "width": "70px",                
+                "template": "&lt;button class=\"editCommentclass\" type=\"button\" onclick=\"editComments(#=TelemetryCommentid#)\"&gt;Edit&lt;/button&gt;  &lt;button class=\"DeleteCommentclass\" type=\"button\" onclick=\"DeleteComments(#=TelemetryCommentid#)\"&gt;Delete&lt;/button&gt;"
+                
+                 }
+          ]'/>
+      <!--<vz:property  vz:name="columns"  vz:value='[  
+                {
+                "field": "owningteamname", 
+                "title": "Owning Team",
+                 "width": "150px"
+
+                }, 
+                {
+                "field": "status",
+                "width": "150px",
+                "title": "Status"
+                 },
+              
+          ]'/>-->
+
+      <vz:property  vz:name="sortable"  vz:value="true"/>
+      <vz:property  vz:name="resizable"  vz:value="true"/>
+      <vz:property  vz:name="filterable"  vz:value="true"/>
+
+      <vz:property vz:name="useNoDataMessage" vz:value="true"/>
+      <vz:property vz:name="noDataMessage" vz:value="No Data Available"/>
+      <vz:property vz:name="noDataStyle" vz:value='{"color":"green"}'/>
+    
+    </vz:properties>
+  </vz:grid>
+  
+  <div>
+    <H2>
+      KPI Definitions:
+    </H2>
+    <b> Avaialbility:</b> Availbility is computed with Application insights synthetic transactions.
+    <br/> Total Tests Passed/Total Tests Executed
+    <br/>   <br/>
+    <b> Reliability:</b> Total Request Succeeded/Total Requests Processed.
+    <br/> Excludes 401 Unuthorized Exceptions. Content Folder and Javascripts.
+    <br/>   <br/>
+    <b> Performance:</b> Total Request Under 5secs for Portal and 3 secs for service response Time/Total Requests Processed.
+    <br/> Excludes 401 Unuthorized Exceptions. Content Folder and Javascripts.
+  </div>
+
+  <div class="modal" id="modal-one" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <span id="ModalTitle">Add New Comment</span>  <span class="close" aria-hidden="true" style="float:right">×</span>       
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" role="form" >
+             <div class="form-group required">
+
+            <label class="control-label col-sm-2" for="type">Type</label>
+            <select class="control-label col-sm-8" id="type">
+              <option value="1">Availability</option>
+              <option value="2">Reliability</option>
+              <option value="3">Performance</option>
+            </select>
+          </div>
+           <div class="form-group required">
+            <label class="control-label col-sm-2" for="Service">Service</label>
+            <select class="control-label col-sm-8" id="Service">
+              <option value="1">Agreement Services</option>
+              <option value="2">Approvals Services</option>
+              <option value="3">B2B Services</option>
+              <option value="4">BI Services</option>
+              <option value="5">Core Services</option>
+              <option value="6">Data Services</option>
+              <option value="7">Entitlement Services</option>
+              <option value="8">Order Services</option>
+              <option value="9">Portals</option>
+              <option value="10">Quote Services</option>
+              <option value="11">UM Services</option>
+            </select>
+          </div>
+
+            <div class="form-group required">
+            <label class="control-label col-sm-2" for="CommentFromDate">From Date</label>
+            <div class="control-label col-sm-8">
+              <input id="CommentFromDate"  type="text" />
+              <span style="font-size:smaller;font-style:oblique;margin-left:10px;color:grey"> [mm/dd/yyyy hh:mm AM/PM] </span>
+            </div>
+          </div>
+ <div class="form-group required">
+            <label class="control-label col-sm-2" for="CommentToDate">To Date</label>
+            <div class="control-label col-sm-8">
+              <input id="CommentToDate"  type="text" />
+              <span style="font-size:smaller;font-style:oblique;margin-left:10px;color:grey"> [mm/dd/yyyy hh:mm AM/PM] </span>
+            </div>
+          </div>
+          
+           <div class="form-group required">
+            <label class="control-label col-sm-2" for="Comment">Comment</label>
+            <div class="control-label col-sm-8">
+              <textarea  id="txtComment" cols="50" rows="3" class="form-control" />              
+            </div>
+          </div>         
+      <label id="validation" style="color:red;display:none;">All fields are mandatory</label>
+        </form>
+          <div class="modal-footer">
+                <div class="form-actions">
+                  
+                    <button type="submit"  class="btn btn-success" id="in_submit">Submit</button>
+                    <input type="button"  class="btn btn-default" value="Clear" title="Clear" id="in_clear"  />
+                </div>
+            </div>
+      </div>
+    
+    </div>
+  </div>
+  
+  <!-- /Modal -->
+  
+
+</vz:view>

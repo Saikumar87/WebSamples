@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BasicHTTPServer", "BasicHTTPServer\BasicHTTPServer.csproj", "{1739E019-A39C-489F-8C64-AD527C9F1C3C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DealingWithStreams", "DealingWithStreams\DealingWithStreams.csproj", "{93CADB94-E894-4A56-BDE2-E3C3D882B9B7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HttpClientConsoleApp", "HttpClientConsoleApp\HttpClientConsoleApp.csproj", "{47954603-5593-4A91-A39A-FAF4843C0BC2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebAPI_Lab1", "WebAPI_Lab1\WebAPI_Lab1.csproj", "{1F5F365F-20E4-4186-A3C8-D05902017750}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkingWithFiles", "WorkingWithFiles\WorkingWithFiles.csproj", "{75271CE3-DB62-42CC-A941-45D9E4194B11}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Encoding", "Encoding\Encoding.csproj", "{E9A1B81E-458F-422E-8095-080A47A4B0F0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1739E019-A39C-489F-8C64-AD527C9F1C3C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1739E019-A39C-489F-8C64-AD527C9F1C3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1739E019-A39C-489F-8C64-AD527C9F1C3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1739E019-A39C-489F-8C64-AD527C9F1C3C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{93CADB94-E894-4A56-BDE2-E3C3D882B9B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93CADB94-E894-4A56-BDE2-E3C3D882B9B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{93CADB94-E894-4A56-BDE2-E3C3D882B9B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{93CADB94-E894-4A56-BDE2-E3C3D882B9B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47954603-5593-4A91-A39A-FAF4843C0BC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47954603-5593-4A91-A39A-FAF4843C0BC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47954603-5593-4A91-A39A-FAF4843C0BC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47954603-5593-4A91-A39A-FAF4843C0BC2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F5F365F-20E4-4186-A3C8-D05902017750}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F5F365F-20E4-4186-A3C8-D05902017750}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F5F365F-20E4-4186-A3C8-D05902017750}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F5F365F-20E4-4186-A3C8-D05902017750}.Release|Any CPU.Build.0 = Release|Any CPU
+		{75271CE3-DB62-42CC-A941-45D9E4194B11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75271CE3-DB62-42CC-A941-45D9E4194B11}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75271CE3-DB62-42CC-A941-45D9E4194B11}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75271CE3-DB62-42CC-A941-45D9E4194B11}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E9A1B81E-458F-422E-8095-080A47A4B0F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E9A1B81E-458F-422E-8095-080A47A4B0F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E9A1B81E-458F-422E-8095-080A47A4B0F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E9A1B81E-458F-422E-8095-080A47A4B0F0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
